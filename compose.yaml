@@ -1,0 +1,31 @@
+services:
+  graphed-knowledge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/c-sellers/graphed-knowledge:latest
+    ports:
+      - "8000:8000"
+    environment:
+      MCP_DATA_DIR: /data
+      MCP_TOKEN_MAP: /data/tokens.json
+      MCP_KB_PATH: /data/shared-kb
+      MCP_KB_DESCRIPTION: "Default knowledge base"
+    volumes:
+      - ./data:/data
+
+  graphed-knowledge-admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/c-sellers/graphed-knowledge:latest
+    ports:
+      - "8001:8001"
+    environment:
+      MCP_DATA_DIR: /data
+      MCP_TOKEN_MAP: /data/tokens.json
+      MCP_ADMIN_TOKEN: ${MCP_ADMIN_TOKEN}
+      MCP_ADMIN_PORT: 8001
+    volumes:
+      - ./data:/data
+    command: python mcp_admin.py

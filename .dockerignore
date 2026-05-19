@@ -1,0 +1,10 @@
+.venv
+.env
+__pycache__
+*.py[cod]
+tests/
+.git/
+*.md
+!README.md
+data
+misc
