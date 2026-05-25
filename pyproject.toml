@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "graphed-knowledge"
-version = "0.5.0"
+version = "0.6.0"
 description = "Graph-structured knowledge base for AI agents — Obsidian-style Markdown nodes with wiki-links, PageRank, hybrid retrieval, and MCP server integration"
 readme = "README.md"
 license = { text = "MIT" }
