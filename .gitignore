@@ -6,16 +6,20 @@ __pycache__/
 # Virtual environment
 .venv/
 
+# Demo artifacts
+demo_kb/
+
+# Session history
+sessions/
+
 # Per-project KB directories
 .kb/
 
-# Build
+# IDE / local settings
+.claude/settings.local.json
 dist/
 
 # Environment variables
 .env
 data
 misc
-
-# Local scripts
-build_and_push.sh

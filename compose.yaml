@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ghcr.io/c-sellers/graphed-knowledge:latest
+    image: git.goosu.net/c-sellers/graphed-knowledge:latest
     ports:
       - "8000:8000"
     environment:
@@ -18,7 +18,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ghcr.io/c-sellers/graphed-knowledge:latest
+    image: git.goosu.net/c-sellers/graphed-knowledge:latest
     ports:
       - "8001:8001"
     environment:

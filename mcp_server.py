@@ -407,6 +407,85 @@ if __name__ == "__main__":
         app = mcp.streamable_http_app()
         _inner_app = app
 
+        async def _read_body(receive: Receive) -> bytes:
+            body = b""
+            while True:
+                msg = await receive()
+                body += msg.get("body", b"")
+                if not msg.get("more_body", False):
+                    break
+            return body
+
+        async def _json_response(send: Send, data, status: int = 200) -> None:
+            body = _json.dumps(data).encode()
+            await send({"type": "http.response.start", "status": status, "headers": [
+                (b"content-type", b"application/json"),
+                (b"content-length", str(len(body)).encode()),
+            ]})
+            await send({"type": "http.response.body", "body": body})
+
+        async def _handle_api(path: str, method: str, receive: Receive, send: Send) -> None:
+            parts = path.removeprefix("/api/").split("/")
+
+            # GET /api/kbs
+            if parts == ["kbs"] and method == "GET":
+                reg, err = _get_user_registry()
+                if err:
+                    return await _json_response(send, {"error": err}, 500)
+                return await _json_response(send, reg.list())
+
+            # /api/kbs/{kb_id}/...
+            if len(parts) >= 2 and parts[0] == "kbs":
+                kb_id = parts[1]
+
+                # GET /api/kbs/{kb_id}/nodes
+                if len(parts) == 3 and parts[2] == "nodes" and method == "GET":
+                    mem, err = _get_kb(kb_id)
+                    if err:
+                        return await _json_response(send, {"error": err}, 404)
+                    nodes = []
+                    for nid, node in mem.graph.nodes.items():
+                        nodes.append({
+                            "id": nid,
+                            "title": node.title,
+                            "tags": node.tags,
+                            "links": node.links,
+                            "snippet": node.content[:150],
+                        })
+                    stats = mem.stats()
+                    return await _json_response(send, {"nodes": nodes, "stats": stats})
+
+                # GET /api/kbs/{kb_id}/nodes/{node_id}
+                if len(parts) == 4 and parts[2] == "nodes" and method == "GET":
+                    node_id = parts[3]
+                    mem, err = _get_kb(kb_id)
+                    if err:
+                        return await _json_response(send, {"error": err}, 404)
+                    node = mem.graph.nodes.get(node_id)
+                    if not node:
+                        return await _json_response(send, {"error": "not found"}, 404)
+                    return await _json_response(send, {
+                        "id": node.id,
+                        "title": node.title,
+                        "content": node.content,
+                        "tags": node.tags,
+                        "links": node.links,
+                    })
+
+                # POST /api/kbs/{kb_id}/query
+                if len(parts) == 3 and parts[2] == "query" and method == "POST":
+                    mem, err = _get_kb(kb_id)
+                    if err:
+                        return await _json_response(send, {"error": err}, 404)
+                    body = _json.loads(await _read_body(receive))
+                    query = body.get("query", "")
+                    strategy = body.get("strategy", "hybrid")
+                    top_k = body.get("top_k", 10)
+                    result = mem.recall(query, strategy=strategy, top_k=top_k, as_context=True)
+                    return await _json_response(send, {"result": result})
+
+            await _json_response(send, {"error": "not found"}, 404)
+
         async def _auth_app(scope: Scope, receive: Receive, send: Send) -> None:
             if scope["type"] in ("http", "websocket"):
                 path = scope.get("path", "")
@@ -423,6 +502,9 @@ if __name__ == "__main__":
                     await send({"type": "http.response.body", "body": b"Unauthorized"})
                     return
                 _current_user.set(user_id)
+                if path.startswith("/api/"):
+                    method = scope.get("method", "GET")
+                    return await _handle_api(path, method, receive, send)
             await _inner_app(scope, receive, send)
 
         if _TOKEN_MAP:

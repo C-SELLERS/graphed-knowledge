@@ -2,7 +2,9 @@
 .env
 __pycache__
 *.py[cod]
+sessions/
 tests/
+.claude/
 .git/
 *.md
 !README.md

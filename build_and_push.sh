@@ -1,0 +1,1 @@
+docker compose build && docker push git.goosu.net/c-sellers/graphed-knowledge:latest
