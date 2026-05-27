@@ -371,6 +371,33 @@ def kb_reflect(kb_id: str, top_k: int = 5) -> str:
 
 
 @mcp.tool()
+def kb_search_all(query: str, strategy: str = "hybrid", top_k: int = 3) -> str:
+    """Search across ALL registered knowledge bases and return merged results.
+
+    Args:
+        query:     Natural-language query.
+        strategy:  'keyword', 'graph', or 'hybrid' (default).
+        top_k:     Maximum results per KB (default 3).
+    """
+    reg, err = _get_user_registry()
+    if err:
+        return f"Error: {err}"
+    entries = reg.list()
+    if not entries:
+        return "No knowledge bases registered."
+    lines = []
+    for e in entries:
+        try:
+            mem = reg.get(e["id"])
+            result = mem.recall(query, strategy=strategy, top_k=top_k, as_context=True)
+            if "[No relevant knowledge found]" not in result:
+                lines.append(f"--- KB: {e['id']} ---\n{result}")
+        except Exception:
+            continue
+    return "\n\n".join(lines) if lines else "[No relevant knowledge found across any KB]"
+
+
+@mcp.tool()
 def kb_stats(kb_id: str) -> str:
     """Return statistics about a specific knowledge graph.
 

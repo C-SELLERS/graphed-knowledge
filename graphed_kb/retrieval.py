@@ -242,7 +242,8 @@ class Retriever:
         for i, r in enumerate(results, 1):
             hop_info = f" (hop={r.hop_distance})" if r.hop_distance is not None else ""
             lines.append(f"## {i}. {r.title}{hop_info}  [score={r.score:.3f}]")
-            lines.append(r.snippet)
+            node = self.graph.nodes.get(r.node_id)
+            lines.append(node.content if node else r.snippet)
             if r.matched_terms:
                 lines.append(f"_Matched terms: {', '.join(r.matched_terms)}_")
             lines.append("")
